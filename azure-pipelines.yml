@@ -1,0 +1,31 @@
+name: $(DayOfYear)$(Rev:rr)_$(GITVERSION.FullSemVer)
+
+variables:
+- group: Cast
+
+stages:
+- stage: Build
+  displayName: Build stage
+  
+  jobs:
+  - job: Build
+    displayName: Build
+    pool : CAST AIP Rescan
+    timeoutInMinutes: 360
+    
+    steps:
+    - checkout: self
+    - script: echo "$(Build.SourcesDirectory)"
+      displayName: 'Display Sources Directory of Azure agent working directory'
+    - task: CopyFiles@2
+      displayName: 'Copy agent working directory from Azure to Cast - Copy files task'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        TargetFolder: '$(CastSourcePath)\$(Build.Repository.Name)'
+        CleanTargetFolder: true
+        OverWrite: true
+
+
+    - task: CmdLine@2
+      inputs:
+        script: 'java -jar $(SlaCliJar)  add  --apikey="$(SlaApIKey)" -n "$(Build.Repository.Name)" -f "$(CastSourcePath)\$(Build.Repository.Name)" -s "$(SlaServerName)"'
